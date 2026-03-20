@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+streamlit
+pandas
+numpy
+scikit-learn
+lightgbm
+shap
+tldextract
+requests
+joblib
+tqdm
