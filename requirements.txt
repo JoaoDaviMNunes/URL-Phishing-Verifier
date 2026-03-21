@@ -10,3 +10,4 @@ tldextract
 requests
 joblib
 tqdm
+beautifulsoup4

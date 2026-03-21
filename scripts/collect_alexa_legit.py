@@ -1,7 +1,12 @@
 from __future__ import annotations
 
+import sys
 import argparse
 import os
+from pathlib import Path
+
+# Garante que o diretório raiz do projeto esteja no PYTHONPATH para encontrar 'url_phishing_verifier'
+sys.path.append(str(Path(__file__).parent.parent))
 
 from url_phishing_verifier.collection.alexa import collect_alexa_legit
 

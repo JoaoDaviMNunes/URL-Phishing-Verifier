@@ -104,8 +104,8 @@ class URLFeatureExtractor:
             ssl_days_since_start = cert_info.days_since_start
 
         feats["ssl_has_valid_cert"] = float(ssl_has_valid_cert) if ssl_has_valid_cert is not None else np.nan
-        feats["ssl_cert_days_to_expiry"] = ssl_days_to_expiry
-        feats["ssl_cert_days_since_start"] = ssl_days_since_start
+        feats["ssl_cert_days_to_expiry"] = float(ssl_days_to_expiry) if ssl_days_to_expiry is not None else np.nan
+        feats["ssl_cert_days_since_start"] = float(ssl_days_since_start) if ssl_days_since_start is not None else np.nan
 
         # Geolocalização
         country_risk = np.nan

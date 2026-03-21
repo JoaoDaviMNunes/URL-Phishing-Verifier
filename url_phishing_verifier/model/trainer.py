@@ -9,6 +9,7 @@ import joblib
 import numpy as np
 import pandas as pd
 import shap
+import lightgbm as lgb
 from lightgbm import LGBMClassifier
 from sklearn.metrics import (
     accuracy_score,
@@ -154,8 +155,7 @@ def train_model(
         y_train,
         eval_set=[(X_val, y_val)],
         eval_metric="auc",
-        verbose=False,
-        callbacks=None,
+        callbacks=[lgb.log_evaluation(period=-1)],
     )
 
     proba_val = model.predict_proba(X_val)[:, 1]

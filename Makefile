@@ -22,7 +22,7 @@ REQUIREMENTS ?= requirements.txt
 ARTIFACTS_DIR ?= artifacts
 DATA_DIR ?= data
 RAW_DIR ?= $(DATA_DIR)/raw
-MERGED_DIR ?= $(DATA_DIR)/merged
+PROCESSED_DIR ?= $(DATA_DIR)/processed
 
 # Datasets padrao
 PHISHTANK_DUMP ?= $(RAW_DIR)/phish_dump.txt
@@ -32,7 +32,7 @@ ALEXA_INPUT ?= $(RAW_DIR)/alexa_top_sites.csv
 PHISHTANK_CSV ?= $(RAW_DIR)/phishing_phishtank.csv
 MENDELEY_CSV ?= $(RAW_DIR)/phishing_mendeley.csv
 ALEXA_CSV ?= $(RAW_DIR)/legit_alexa.csv
-DATASET ?= $(MERGED_DIR)/dataset.csv
+DATASET ?= $(PROCESSED_DIR)/dataset.csv
 
 # Colunas e parametros de treino/coleta
 URL_COLUMN ?= url
@@ -134,7 +134,7 @@ lint: ## Roda ruff (se instalado)
 	@ruff check . || true
 
 ensure-dirs: ## Cria diretorios de dados/artifacts
-	@mkdir -p "$(RAW_DIR)" "$(MERGED_DIR)" "$(ARTIFACTS_DIR)"
+	@mkdir -p "$(RAW_DIR)" "$(PROCESSED_DIR)" "$(ARTIFACTS_DIR)"
 
 env-ready: install ## Garante venv + dependencias instaladas
 	@echo "Ambiente pronto para execucao."
@@ -182,7 +182,7 @@ collect-all: collect-phishtank collect-mendeley collect-alexa ## Executa todas a
 	@echo "Coletas concluidas em $(RAW_DIR)"
 
 .PHONY: merge-datasets
-merge-datasets: env-ready ensure-dirs ## Junta CSVs coletados em um dataset final
+merge-datasets: env-ready ensure-dirs ## Junta CSVs brutos em data/processed/dataset.csv
 	$(PY_RUN) scripts/merge_datasets.py \
 		--inputs "$(PHISHTANK_CSV)" "$(MENDELEY_CSV)" "$(ALEXA_CSV)" \
 		--out "$(DATASET)"

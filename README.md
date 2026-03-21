@@ -2,10 +2,10 @@
 Verificador de phishing em URLs (LightGBM + features lexicais/estruturais/SSL/Geo + API + dashboard).
 
 ## Visão geral do pipeline
-1. **Coleta de dados (datasets)**  
-   - **PhishTank** (maliciosas)  
-   - **Mendeley Phishing Dataset** (maliciosas)  
-   - **URLs legítimas** (ex: Alexa Top Sites)
+1. **Datasets pré-tratados (já disponíveis em `data/raw/`)**  
+   - **PhishTank** (`phishing_phishtank.csv`) — maliciosas  
+   - **Mendeley Phishing Dataset** (`phishing_mendeley.csv`) — maliciosas  
+   - **Alexa Top Sites** (`legit_alexa.csv`) — legítimas
 
 2. **Extração de features**
    - **Lexicais**: regex (ex.: `@`, `-`, palavras suspeitas), tamanho, dígitos excessivos, **entropia**.
@@ -104,10 +104,10 @@ python3 scripts/collect_alexa_legit.py \
   --out "data/raw/legit_alexa.csv" \
   --domain-column domain
 
-# Merge final
+# Merge final (se necessário recriar o dataset processado)
 python3 scripts/merge_datasets.py \
   --inputs "data/raw/phishing_phishtank.csv" "data/raw/phishing_mendeley.csv" "data/raw/legit_alexa.csv" \
-  --out "data/merged/dataset.csv"
+  --out "data/processed/dataset.csv"
 ```
 
 As mesmas etapas via `make`:
@@ -125,7 +125,7 @@ Observação:
 ## Treino do modelo
 ```bash
 python3 scripts/train_model.py \
-  --csv "data/merged/dataset.csv" \
+  --csv "data/processed/dataset.csv" \
   --artifacts-dir "artifacts" \
   --beta-fbeta 2.0
 ```
@@ -133,7 +133,7 @@ python3 scripts/train_model.py \
 Se quiser incluir features **SSL**/ **Geo** (pode ser lento):
 ```bash
 python3 scripts/train_model.py \
-  --csv "data/merged/dataset.csv" \
+  --csv "data/processed/dataset.csv" \
   --artifacts-dir "artifacts" \
   --enable-ssl \
   --enable-geo \
