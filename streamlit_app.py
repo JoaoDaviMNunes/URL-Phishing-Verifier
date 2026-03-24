@@ -149,81 +149,342 @@ TRANSLATIONS = {
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-#  CSS
+#  CSS — Cyber-Industrial Design System
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 def apply_style():
     st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
     :root {
-        --primary: #00ffcc;
-        --danger:  #ff4b6e;
-        --warning: #ffb300;
-        --safe:    #00e676;
-        --bg:      #0e1117;
-        --card-bg: #161b27;
-        --border:  rgba(255,255,255,0.07);
-        --text:    #e2e8f0;
-        --muted:   #8892a4;
+        --primary:    #22d3ee;
+        --primary-dim: rgba(34,211,238,0.12);
+        --primary-glow: rgba(34,211,238,0.25);
+        --danger:     #fb7185;
+        --danger-dim: rgba(251,113,133,0.12);
+        --warning:    #fbbf24;
+        --warning-dim: rgba(251,191,36,0.12);
+        --safe:       #34d399;
+        --safe-dim:   rgba(52,211,153,0.12);
+        --bg:         #0a0e1a;
+        --bg-elevated: #0f1629;
+        --card-bg:    rgba(15,22,41,0.75);
+        --card-border: rgba(34,211,238,0.08);
+        --border:     rgba(255,255,255,0.06);
+        --text:       #e2e8f0;
+        --text-secondary: #94a3b8;
+        --muted:      #64748b;
+        --font-display: 'Space Grotesk', system-ui, sans-serif;
+        --font-mono:   'JetBrains Mono', 'Fira Code', monospace;
     }
 
+    /* ── Typography ── */
     html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif !important;
+        font-family: var(--font-display) !important;
+        color: var(--text) !important;
     }
 
-    h1 { color: var(--primary) !important; font-weight: 800 !important;
-         letter-spacing: -1px; text-shadow: 0 0 30px rgba(0,255,204,0.25); }
-    h2, h3 { color: var(--text) !important; }
+    h1 {
+        font-family: var(--font-display) !important;
+        color: var(--primary) !important;
+        font-weight: 700 !important;
+        letter-spacing: -0.03em;
+        font-size: 2.2rem !important;
+        text-shadow: 0 0 40px var(--primary-glow), 0 0 80px rgba(34,211,238,0.08);
+        position: relative;
+    }
+    h2, h3 {
+        font-family: var(--font-display) !important;
+        color: var(--text) !important;
+        font-weight: 600 !important;
+        letter-spacing: -0.02em;
+    }
 
+    /* ── Animated scan-line on app header ── */
+    .scan-header {
+        position: relative;
+        overflow: hidden;
+        padding: 2rem 0 1rem;
+        margin-bottom: 0.5rem;
+    }
+    .scan-header::after {
+        content: '';
+        position: absolute;
+        top: 0; left: -100%; right: 0; bottom: 0;
+        background: linear-gradient(
+            90deg,
+            transparent 0%,
+            rgba(34,211,238,0.04) 40%,
+            rgba(34,211,238,0.08) 50%,
+            rgba(34,211,238,0.04) 60%,
+            transparent 100%
+        );
+        animation: scanline 4s ease-in-out infinite;
+        pointer-events: none;
+    }
+    @keyframes scanline {
+        0%   { transform: translateX(0); }
+        100% { transform: translateX(200%); }
+    }
+    .scan-subtitle {
+        font-family: var(--font-mono) !important;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        letter-spacing: 0.02em;
+        line-height: 1.6;
+        margin-top: 0.25rem;
+    }
+
+    /* ── Grain overlay for texture ── */
+    .main .block-container::before {
+        content: '';
+        position: fixed;
+        top: 0; left: 0; width: 100vw; height: 100vh;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    /* ── Input field ── */
     .stTextInput input {
-        background: var(--card-bg) !important; color: #fff !important;
-        border: 2px solid var(--border) !important; border-radius: 12px !important;
-        font-size: 1rem !important; padding: 0.75rem 1rem !important;
+        background: var(--bg-elevated) !important;
+        color: #fff !important;
+        border: 1.5px solid var(--card-border) !important;
+        border-radius: 12px !important;
+        font-family: var(--font-mono) !important;
+        font-size: 0.95rem !important;
+        padding: 0.85rem 1.1rem !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
     .stTextInput input:focus {
         border-color: var(--primary) !important;
-        box-shadow: 0 0 16px rgba(0,255,204,0.18) !important;
+        box-shadow: 0 0 0 3px var(--primary-dim),
+                    0 0 20px rgba(34,211,238,0.1) !important;
+    }
+    .stTextInput label {
+        font-family: var(--font-display) !important;
+        font-weight: 500 !important;
+        letter-spacing: 0.01em;
     }
 
+    /* ── Buttons ── */
     div.stButton > button:first-child {
-        background: linear-gradient(135deg, #00ffcc, #00c9a0) !important;
-        color: #000 !important; font-weight: 700 !important;
-        border: none !important; border-radius: 10px !important;
-        padding: 0.65rem 2.5rem !important; font-size: 1rem !important;
+        background: linear-gradient(135deg, #22d3ee 0%, #06b6d4 50%, #0891b2 100%) !important;
+        color: #0a0e1a !important;
+        font-family: var(--font-display) !important;
+        font-weight: 600 !important;
+        border: none !important;
+        border-radius: 10px !important;
+        padding: 0.7rem 2.5rem !important;
+        font-size: 0.95rem !important;
+        letter-spacing: 0.02em;
         width: 100%;
+        transition: all 0.2s ease !important;
+        box-shadow: 0 4px 15px rgba(34,211,238,0.2) !important;
     }
-    div.stButton > button:hover { opacity: 0.88; transform: scale(1.01); }
+    div.stButton > button:hover {
+        transform: translateY(-1px) !important;
+        box-shadow: 0 6px 25px rgba(34,211,238,0.3) !important;
+    }
 
-    .badge { display: inline-flex; align-items: center; gap: .5rem;
-             padding: .55rem 1.6rem; border-radius: 999px;
-             font-weight: 700; font-size: 1.15rem; text-align: center; }
-    .badge-safe   { background: rgba(0,230,118,.12); color: #00e676; border: 2px solid #00e676; }
-    .badge-warn   { background: rgba(255,179,0,.12); color: #ffb300; border: 2px solid #ffb300; }
-    .badge-danger { background: rgba(255,75,110,.12); color: #ff4b6e; border: 2px solid #ff4b6e; }
+    /* ── Risk Badges — pulsing shield ── */
+    @keyframes pulse-safe {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(52,211,153,0.4); }
+        50%      { box-shadow: 0 0 0 12px rgba(52,211,153,0); }
+    }
+    @keyframes pulse-warn {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(251,191,36,0.4); }
+        50%      { box-shadow: 0 0 0 12px rgba(251,191,36,0); }
+    }
+    @keyframes pulse-danger {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(251,113,133,0.5); }
+        50%      { box-shadow: 0 0 0 14px rgba(251,113,133,0); }
+    }
+    .badge {
+        display: inline-flex; align-items: center; gap: 0.6rem;
+        padding: 0.7rem 2rem;
+        border-radius: 999px;
+        font-family: var(--font-display) !important;
+        font-weight: 700;
+        font-size: 1.2rem;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        transition: transform 0.2s ease;
+    }
+    .badge:hover { transform: scale(1.03); }
+    .badge-ok {
+        background: var(--safe-dim);
+        color: var(--safe);
+        border: 2px solid var(--safe);
+        animation: pulse-safe 2.5s ease-out infinite;
+    }
+    .badge-warn {
+        background: var(--warning-dim);
+        color: var(--warning);
+        border: 2px solid var(--warning);
+        animation: pulse-warn 2s ease-out infinite;
+    }
+    .badge-bad {
+        background: var(--danger-dim);
+        color: var(--danger);
+        border: 2px solid var(--danger);
+        animation: pulse-danger 1.5s ease-out infinite;
+    }
 
-    .card { background: var(--card-bg); border:1px solid var(--border);
-            border-radius: 16px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; }
-    .card-title { font-size: .75rem; font-weight:700; letter-spacing:.1em;
-                  text-transform:uppercase; color:var(--muted); margin-bottom:.75rem; }
+    /* ── Glassmorphism Cards ── */
+    .card {
+        background: var(--card-bg);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--card-border);
+        border-radius: 16px;
+        padding: 1.4rem 1.6rem;
+        margin-bottom: 1.25rem;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    .card:hover {
+        border-color: rgba(34,211,238,0.18);
+        box-shadow: 0 4px 30px rgba(34,211,238,0.06);
+    }
+    .card-title {
+        font-family: var(--font-mono) !important;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--primary);
+        margin-bottom: 0.85rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--border);
+    }
 
-    .chip { display: inline-block; padding: .22rem .6rem; border-radius: 6px;
-            font-size: .78rem; font-weight:600; margin: .15rem .1rem; }
-    .chip-ok  { background: rgba(0,230,118,.12); color: #00e676; }
-    .chip-bad { background: rgba(255,75,110,.12); color: #ff4b6e; }
-    .chip-neu { background: rgba(255,255,255,.07); color: #b0bec5; }
+    /* ── Chips ── */
+    .chip {
+        display: inline-block;
+        padding: 0.2rem 0.65rem;
+        border-radius: 6px;
+        font-family: var(--font-mono) !important;
+        font-size: 0.75rem;
+        font-weight: 500;
+        margin: 0.15rem 0.1rem;
+        letter-spacing: 0.02em;
+    }
+    .chip-ok  { background: var(--safe-dim); color: var(--safe); }
+    .chip-bad { background: var(--danger-dim); color: var(--danger); }
+    .chip-neu { background: rgba(255,255,255,0.06); color: var(--text-secondary); }
 
-    .conf-bar-track { background: rgba(255,255,255,.08); border-radius:999px;
-                      height:14px; overflow:hidden; margin-top:.3rem; }
-    .conf-bar-fill  { height:100%; border-radius:999px; transition:width .6s ease; }
+    /* ── Confidence Bar ── */
+    .conf-bar-track {
+        background: rgba(255,255,255,0.06);
+        border-radius: 999px;
+        height: 10px;
+        overflow: hidden;
+        margin-top: 0.35rem;
+        position: relative;
+    }
+    .conf-bar-fill {
+        height: 100%;
+        border-radius: 999px;
+        transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+    }
+    .conf-bar-fill::after {
+        content: '';
+        position: absolute;
+        top: 0; right: 0; bottom: 0;
+        width: 30px;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2));
+        border-radius: 0 999px 999px 0;
+    }
+    .conf-label {
+        font-family: var(--font-mono) !important;
+        font-weight: 600;
+        font-size: 1rem;
+        margin-bottom: 0.2rem;
+    }
 
-    .source-note { background: rgba(0,255,204,.06); border: 1px solid rgba(0,255,204,.15);
-                   border-radius: 10px; padding: .7rem 1rem; margin-bottom: 1rem;
-                   font-size: .88rem; color: #00ffcc; }
+    /* ── Source Note (cached result) ── */
+    .source-note {
+        background: var(--primary-dim);
+        border: 1px solid rgba(34,211,238,0.2);
+        border-left: 3px solid var(--primary);
+        border-radius: 0 10px 10px 0;
+        padding: 0.75rem 1.1rem;
+        margin-bottom: 1rem;
+        font-family: var(--font-mono) !important;
+        font-size: 0.82rem;
+        color: var(--primary);
+    }
 
-    .ext-row { display:flex; align-items:center; gap:.6rem; padding:.35rem 0;
-               border-bottom:1px solid rgba(255,255,255,.04); font-size:.88rem; }
-    .ext-icon { font-size:1.1rem; }
+    /* ── External Check Rows ── */
+    @keyframes fadeSlideIn {
+        from { opacity: 0; transform: translateX(-8px); }
+        to   { opacity: 1; transform: translateX(0); }
+    }
+    .ext-row {
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+        padding: 0.45rem 0;
+        border-bottom: 1px solid rgba(255,255,255,0.03);
+        font-family: var(--font-display) !important;
+        font-size: 0.88rem;
+        animation: fadeSlideIn 0.4s ease forwards;
+    }
+    .ext-row:nth-child(1) { animation-delay: 0.05s; }
+    .ext-row:nth-child(2) { animation-delay: 0.1s;  }
+    .ext-row:nth-child(3) { animation-delay: 0.15s; }
+    .ext-row:nth-child(4) { animation-delay: 0.2s;  }
+    .ext-row:nth-child(5) { animation-delay: 0.25s; }
+    .ext-icon { font-size: 1.1rem; flex-shrink: 0; }
+    .ext-name { font-weight: 500; color: var(--text); }
+    .ext-detail {
+        font-family: var(--font-mono) !important;
+        color: var(--muted);
+        margin-left: auto;
+        font-size: 0.8rem;
+    }
+
+    /* ── Data Table Rows ── */
+    .card table td {
+        font-family: var(--font-display) !important;
+        vertical-align: top;
+    }
+    .card table td:first-child {
+        font-family: var(--font-mono) !important;
+        font-size: 0.8rem;
+        color: var(--muted);
+        white-space: nowrap;
+        padding-right: 1rem;
+    }
+    .card table td b {
+        color: var(--text);
+    }
+    .card table code {
+        font-family: var(--font-mono) !important;
+        background: rgba(255,255,255,0.04);
+        padding: 0.15rem 0.4rem;
+        border-radius: 4px;
+        font-size: 0.82rem;
+    }
+
+    /* ── Streamlit overrides ── */
+    .stExpander {
+        border: 1px solid var(--card-border) !important;
+        border-radius: 12px !important;
+    }
+    .stProgress > div > div {
+        background: linear-gradient(90deg, var(--primary), #06b6d4) !important;
+    }
+    footer { visibility: hidden; }
+
+    /* ── Language toggle ── */
+    .lang-toggle {
+        font-family: var(--font-mono) !important;
+        font-size: 0.78rem;
+        color: var(--text-secondary);
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -333,19 +594,22 @@ def _confidence_html(score: float, risk_class: str, adjusted_score: float) -> st
     if risk_class == "Seguro":
         pct = 100 - adjusted_score
         label = f"{pct:.1f}% de confiança — Seguro"
-        color = "#00e676"
+        color = "var(--safe)"
+        gradient = "linear-gradient(90deg, #059669, #34d399)"
     elif risk_class == "Suspeito":
         pct = adjusted_score
         label = f"{pct:.1f}% de risco — Suspeito"
-        color = "#ffb300"
+        color = "var(--warning)"
+        gradient = "linear-gradient(90deg, #d97706, #fbbf24)"
     else:
         pct = adjusted_score
         label = f"{pct:.1f}% de risco — Malicioso"
-        color = "#ff4b6e"
+        color = "var(--danger)"
+        gradient = "linear-gradient(90deg, #e11d48, #fb7185)"
     return f"""
-    <div style="font-weight:600;font-size:1.05rem;color:{color};margin-bottom:.25rem">{label}</div>
+    <div class="conf-label" style="color:{color}">{label}</div>
     <div class="conf-bar-track">
-        <div class="conf-bar-fill" style="width:{pct:.1f}%;background:{color};"></div>
+        <div class="conf-bar-fill" style="width:{pct:.1f}%;background:{gradient};"></div>
     </div>"""
 
 
@@ -438,7 +702,7 @@ def _render_url_details(info: Dict[str, Any], T: Dict[str, str]):
 
 
 def _render_external_checks(results: List[ExternalCheckResult], T: Dict[str, str]):
-    """Seção de verificações externas — integrada livremente sem card title."""
+    """Seção de verificações externas — glassmorphism card with animated rows."""
     if not results:
         return
 
@@ -453,14 +717,15 @@ def _render_external_checks(results: List[ExternalCheckResult], T: Dict[str, str
         rows_html += f"""
         <div class="ext-row">
             <span class="ext-icon">{icon}</span>
-            <b>{r.source}</b>
-            <span style="color:#8892a4;margin-left:auto">{r.details}</span>
+            <span class="ext-name">{r.source}</span>
+            <span class="ext-detail">{r.details}</span>
         </div>"""
 
     st.markdown(f"""
-    <div style="margin-bottom: 1.25rem;">
+    <div class="card">
+        <div class="card-title">{T['external_checks_title']}</div>
         {rows_html}
-        <div style="margin-top:.6rem;font-size:.75rem;color:#8892a4">
+        <div style="margin-top:.7rem;font-size:.72rem;color:var(--muted);font-family:var(--font-mono)">
             {T['legend_external']}
         </div>
     </div>""", unsafe_allow_html=True)
@@ -562,21 +827,28 @@ def main() -> None:
 
     c_title, c_lang = st.columns([4, 1])
     with c_title:
-        st.title(TRANSLATIONS[st.session_state["lang"]]["title"])
+        pass  # Title rendered below in scan-header
     with c_lang:
         # Toggle language with flags
         if st.session_state["lang"] == "Português":
-            if st.button("🇺🇸 English", key="lang_btn"):
+            if st.button("🇺🇸 EN", key="lang_btn"):
                 st.session_state["lang"] = "English"
                 st.rerun()
         else:
-            if st.button("🇧🇷 Português", key="lang_btn"):
+            if st.button("🇧🇷 PT", key="lang_btn"):
                 st.session_state["lang"] = "Português"
                 st.rerun()
 
     lang = st.session_state["lang"]
     T = TRANSLATIONS[lang]
-    st.markdown(T["subtitle"])
+
+    # ── Scan-line animated header ──
+    st.markdown(f"""
+    <div class="scan-header">
+        <h1 style="margin:0">{T['title']}</h1>
+        <div class="scan-subtitle">{T['subtitle']}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
     predictor = load_predictor()
     if predictor is None:

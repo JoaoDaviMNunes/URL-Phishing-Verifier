@@ -201,6 +201,10 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
+# Large files
+*.csv
+*.joblib
+
 # Marimo
 marimo/_static/
 marimo/_lsp/
