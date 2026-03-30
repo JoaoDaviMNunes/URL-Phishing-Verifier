@@ -14,6 +14,11 @@ from typing import Any, Callable, Dict, List, Optional
 from urllib.parse import urlparse
 
 import requests
+import urllib3
+
+# Suprime aviso repetitivo quando verify=False é usado em fetch_page_metadata.
+# Necessário pois precisamos buscar metadados de sites maliciosos/com certs inválidos.
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Timeout padrão para requests HTTP
 _TIMEOUT = 20

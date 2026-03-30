@@ -9,7 +9,7 @@ import os
 import sqlite3
 import threading
 from dataclasses import asdict, dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 _DB_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data")
@@ -105,7 +105,7 @@ def save_result(
     """Salva ou atualiza resultado no cache."""
     init_db()
     normalized = url.strip().lower().rstrip("/")
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     details_json = json.dumps(details, ensure_ascii=False, default=str)
     with _lock:
         conn = _connect()

@@ -89,6 +89,24 @@ TRANSLATIONS = {
         "ver_geo": "Geolocalização",
         "geo_method": "Método Geo",
         "shap_count": "Features SHAP",
+        "no": "Não",
+        "yes": "Sim",
+        "unknown": "(desconhecido)",
+        "model_not_found": "⚠️ **Modelo não encontrado.** Treine primeiro:",
+        "db_source_title": "📂 Banco de Dados",
+        "analysis_source_title": "🔬 Análise em Tempo Real",
+        "db_not_found": "URL não encontrada no banco de dados. Será registrada após esta análise.",
+        "db_found": "Resultado encontrado no banco de dados.",
+        "overall_verdict": "⚖️ Veredicto Final",
+        "verdict_both_safe": "Ambas as fontes indicam que a URL é segura.",
+        "verdict_both_danger": "Ambas as fontes indicam que a URL é perigosa.",
+        "verdict_conflict": "As fontes divergem — recomendamos cautela.",
+        "ext_safe": "Seguro",
+        "ext_malicious": "Malicioso",
+        "ext_unavailable": "Indisponível",
+        "ext_status": "Status",
+        "ext_details": "Detalhes",
+        "details_title": "📋 Detalhes da Análise",
     },
     "English": {
         "title": "🛡️ URL Phishing Verifier",
@@ -144,6 +162,24 @@ TRANSLATIONS = {
         "ver_geo": "Geolocation",
         "geo_method": "Geo Method",
         "shap_count": "SHAP features",
+        "no": "No",
+        "yes": "Yes",
+        "unknown": "(unknown)",
+        "model_not_found": "⚠️ **Model not found.** Train first:",
+        "db_source_title": "📂 Database",
+        "analysis_source_title": "🔬 Real-Time Analysis",
+        "db_not_found": "URL not found in database. Will be saved after this analysis.",
+        "db_found": "Result found in database.",
+        "overall_verdict": "⚖️ Final Verdict",
+        "verdict_both_safe": "Both sources indicate the URL is safe.",
+        "verdict_both_danger": "Both sources indicate the URL is dangerous.",
+        "verdict_conflict": "Sources disagree — we recommend caution.",
+        "ext_safe": "Safe",
+        "ext_malicious": "Malicious",
+        "ext_unavailable": "Unavailable",
+        "ext_status": "Status",
+        "ext_details": "Details",
+        "details_title": "📋 Analysis Details",
     }
 }
 
@@ -485,6 +521,21 @@ def apply_style():
         font-size: 0.78rem;
         color: var(--text-secondary);
     }
+
+    /* ── Source Cards (Dual verdict) ── */
+    .source-card {
+        min-height: 180px;
+    }
+    .source-card-empty {
+        border-style: dashed;
+        opacity: 0.7;
+    }
+
+    /* ── Verdict Card ── */
+    .verdict-card {
+        border-left: 3px solid var(--primary);
+        background: linear-gradient(135deg, var(--card-bg) 0%, rgba(34,211,238,0.04) 100%);
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -523,10 +574,10 @@ def _parse_url_info(url: str) -> Dict[str, Any]:
     return {
         "protocol": parsed.scheme.upper(),
         "domain": domain,
-        "subdomain": subdomain or "(nenhum)",
-        "tld": f".{tld}" if tld else "(desconhecido)",
-        "path": parsed.path if parsed.path and parsed.path != "/" else "(raiz)",
-        "query": parsed.query if parsed.query else "(sem parâmetros)",
+        "subdomain": subdomain or "__none__",
+        "tld": f".{tld}" if tld else "__unknown__",
+        "path": parsed.path if parsed.path and parsed.path != "/" else "__root__",
+        "query": parsed.query if parsed.query else "__no_params__",
         "is_https": is_https,
         "is_ip": is_ip,
         "is_shortened": is_short,
@@ -536,6 +587,13 @@ def _parse_url_info(url: str) -> Dict[str, Any]:
         "url_length": len(raw),
         "suspicious_keywords": found_kw,
     }
+
+
+# Mapas internos para normalizar risk_class para PT (usado internamente)
+_RISK_TO_INTERNAL = {
+    "Safe": "Seguro", "Suspicious": "Suspeito", "Malicious": "Malicioso",
+    "Seguro": "Seguro", "Suspeito": "Suspeito", "Malicioso": "Malicioso",
+}
 
 
 def _shap_adjusted_score(
@@ -556,13 +614,18 @@ def _shap_adjusted_score(
     - Consenso baixo (muitos SHAPs contraditórios) → confiança é moderada.
 
     Retorna um valor de 0..100 representando risco (>50 = mais perigoso).
+
+    NOTA: risk_class é SEMPRE normalizado para PT internamente, independente
+    do idioma da interface.
     """
     base_score = prob_phishing * 100.0
 
     if not top_shap:
         return base_score
 
-    is_phishing_verdict = risk_class in ("Suspeito", "Malicioso")
+    # Normaliza para PT internamente (fix B2: evita que tradução quebre a lógica)
+    internal_rc = _RISK_TO_INTERNAL.get(risk_class, risk_class)
+    is_phishing_verdict = internal_rc in ("Suspeito", "Malicioso")
 
     # SHAP positivo = aumenta risco; negativo = reduz risco
     total_abs = sum(abs(f["shap_value"]) for f in top_shap) or 1e-9
@@ -679,54 +742,121 @@ def _render_url_details(info: Dict[str, Any], T: Dict[str, str]):
                 <td><b>{info['protocol']}</b>
                     {"&nbsp;<span class='chip chip-ok'>HTTPS ✓</span>" if info['is_https'] else "&nbsp;<span class='chip chip-bad'>HTTP ⚠</span>"}</td></tr>
             <tr><td style="color:#8892a4;padding:4px 0">{T['subdomain']}</td>
-                <td>{info['subdomain']}
+                <td>{info['subdomain'] if info['subdomain'] != '__none__' else T['none']}
                     {"&nbsp;<span class='chip chip-bad'>"+str(info['num_subdomains'])+" "+T['total_sub']+" ⚠</span>" if info['num_subdomains']>2 else ""}</td></tr>
             <tr><td style="color:#8892a4;padding:4px 0">{T['tld']}</td>
-                <td>{info['tld']}</td></tr>
+                <td>{info['tld'] if info['tld'] != '__unknown__' else T['unknown']}</td></tr>
             <tr><td style="color:#8892a4;padding:4px 0">{T['path']}</td>
-                <td style="word-break:break-all">{info['path'] if info['path'] != '(raiz)' else T['root']}</td></tr>
+                <td style="word-break:break-all">{info['path'] if info['path'] != '__root__' else T['root']}</td></tr>
             <tr><td style="color:#8892a4;padding:4px 0">{T['params']}</td>
-                <td style="word-break:break-all">{info['query'] if info['query'] != '(sem parâmetros)' else T['no_params']}</td></tr>
+                <td style="word-break:break-all">{info['query'] if info['query'] != '__no_params__' else T['no_params']}</td></tr>
             <tr><td style="color:#8892a4;padding:4px 0">{T['length']}</td>
                 <td>{info['url_length']}
                     {"&nbsp;<span class='chip chip-bad'>⚠</span>" if info['url_length']>75 else ""}</td></tr>
             <tr><td style="color:#8892a4;padding:4px 0">{T['ip_as_host']}</td>
-                <td>{"<span class='chip chip-bad'>⚠</span>" if info['is_ip'] else "No"}</td></tr>
+                <td>{"<span class='chip chip-bad'>⚠</span>" if info['is_ip'] else T['no']}</td></tr>
             <tr><td style="color:#8892a4;padding:4px 0">{T['short_url']}</td>
-                <td>{"<span class='chip chip-bad'>⚠</span>" if info['is_shortened'] else "No"}</td></tr>
+                <td>{"<span class='chip chip-bad'>⚠</span>" if info['is_shortened'] else T['no']}</td></tr>
             <tr><td style="color:#8892a4;padding:4px 0">{T['at_symbol']}</td>
-                <td>{"<span class='chip chip-bad'>⚠</span>" if info['has_at_symbol'] else "No"}</td></tr>
+                <td>{"<span class='chip chip-bad'>⚠</span>" if info['has_at_symbol'] else T['no']}</td></tr>
         </table>
         {"<div style='margin-top:.7rem'><span style='color:#8892a4;font-size:.8rem'>⚠️ "+T['suspicious_words']+":</span> "+" ".join(f"<span class='chip chip-bad'>{w}</span>" for w in kws)+"</div>" if kws else ""}
     </div>""", unsafe_allow_html=True)
 
 
 def _render_external_checks(results: List[ExternalCheckResult], T: Dict[str, str]):
-    """Seção de verificações externas — glassmorphism card with animated rows."""
+    """Seção de verificações externas — native Streamlit components."""
     if not results:
         return
-
-    rows_html = ""
-    for r in results:
-        if r.safe is True:
-            icon = "🟢"
-        elif r.safe is False:
-            icon = "🔴"
-        else:
-            icon = "⚪"
-        rows_html += f"""
-        <div class="ext-row">
-            <span class="ext-icon">{icon}</span>
-            <span class="ext-name">{r.source}</span>
-            <span class="ext-detail">{r.details}</span>
-        </div>"""
 
     st.markdown(f"""
     <div class="card">
         <div class="card-title">{T['external_checks_title']}</div>
-        {rows_html}
-        <div style="margin-top:.7rem;font-size:.72rem;color:var(--muted);font-family:var(--font-mono)">
-            {T['legend_external']}
+    </div>""", unsafe_allow_html=True)
+
+    for r in results:
+        if r.safe is True:
+            status_text = f"✅ {T['ext_safe']}"
+        elif r.safe is False:
+            status_text = f"🚨 {T['ext_malicious']}"
+        else:
+            status_text = f"⚪ {T['ext_unavailable']}"
+
+        col_src, col_status, col_detail = st.columns([2, 1.5, 4])
+        with col_src:
+            st.markdown(f"**{r.source}**")
+        with col_status:
+            st.markdown(status_text)
+        with col_detail:
+            st.caption(r.details if r.details else "—")
+
+
+def _render_source_card(
+    title: str,
+    risk_class: str,
+    score: float,
+    adj_score: float,
+    subtitle: str,
+    T: Dict[str, str],
+):
+    """Renderiza um card de fonte (DB ou Análise) com badge e barra de confiança."""
+    icons = {T["risk_safe"]: "✅", T["risk_suspicious"]: "⚠️", T["risk_malicious"]: "🚨"}
+    classes = {T["risk_safe"]: "badge-ok", T["risk_suspicious"]: "badge-warn", T["risk_malicious"]: "badge-bad"}
+    icon = icons.get(risk_class, "❓")
+    cls = classes.get(risk_class, "badge-warn")
+
+    # Confidence/risk bar
+    conf_html = _confidence_html(score, risk_class, adj_score)
+
+    st.markdown(f"""
+    <div class="card source-card">
+        <div class="card-title">{title}</div>
+        <div style="text-align:center;margin:.6rem 0">
+            <span class="badge {cls}" style="font-size:1rem;padding:.5rem 1.4rem">{icon} {risk_class}</span>
+        </div>
+        {conf_html}
+        <div style="margin-top:.5rem;font-size:.78rem;color:var(--muted);font-family:var(--font-mono)">
+            {subtitle}
+        </div>
+    </div>""", unsafe_allow_html=True)
+
+
+def _render_source_card_empty(title: str, message: str):
+    """Card de fonte vazio (URL não encontrada no DB)."""
+    st.markdown(f"""
+    <div class="card source-card source-card-empty">
+        <div class="card-title">{title}</div>
+        <div style="text-align:center;padding:1.2rem 0;color:var(--muted);font-family:var(--font-mono);font-size:.85rem">
+            ⚪ {message}
+        </div>
+    </div>""", unsafe_allow_html=True)
+
+
+def _render_verdict(db_risk: Optional[str], analysis_risk: str, T: Dict[str, str]):
+    """Renderiza o veredicto final comparando as duas fontes."""
+    safe_classes = {T["risk_safe"], "Seguro", "Safe"}
+    danger_classes = {T["risk_suspicious"], T["risk_malicious"], "Suspeito", "Malicioso", "Suspicious", "Malicious"}
+
+    if db_risk is None:
+        # Sem dados do DB, veredicto é só da análise
+        verdict_text = f"<strong>{analysis_risk}</strong> — {T['db_not_found']}"
+        verdict_icon = "🔬"
+    elif db_risk in safe_classes and analysis_risk in safe_classes:
+        verdict_text = T["verdict_both_safe"]
+        verdict_icon = "✅"
+    elif db_risk in danger_classes and analysis_risk in danger_classes:
+        verdict_text = T["verdict_both_danger"]
+        verdict_icon = "🚨"
+    else:
+        verdict_text = T["verdict_conflict"]
+        verdict_icon = "⚠️"
+
+    st.markdown(f"""
+    <div class="card verdict-card">
+        <div class="card-title">{T['overall_verdict']}</div>
+        <div style="text-align:center;font-size:1.1rem;padding:.5rem 0">
+            <span style="font-size:1.5rem">{verdict_icon}</span>
+            <div style="margin-top:.4rem;font-family:var(--font-display);color:var(--text)">{verdict_text}</div>
         </div>
     </div>""", unsafe_allow_html=True)
 
@@ -852,9 +982,7 @@ def main() -> None:
 
     predictor = load_predictor()
     if predictor is None:
-        st.warning(
-            f"⚠️ **{T['found_db']}**" if lang == "English" else "⚠️ **Modelo não encontrado.** Treine primeiro:"
-        )
+        st.warning(T["model_not_found"])
         st.code("python3 scripts/train_model.py --csv data/processed/dataset.csv --artifacts-dir artifacts")
         st.stop()
 
@@ -879,46 +1007,14 @@ def main() -> None:
         st.caption(f"💡 {T['input_help']}")
         st.stop()
 
-    # ── Check database first ────────────────
+    # ── Lookup database (fonte 1) ────────────────
     cached = lookup_url(url)
-    force_recheck = False
+    is_recheck = "force_recheck" in st.session_state
 
-    if cached and "force_recheck" not in st.session_state:
-        st.markdown(f"<div class='source-note'>{T['found_db']}</div>", unsafe_allow_html=True)
-        
-        # Translate risk class for display if needed
-        disp_risk: str = str(cached.risk_class) if cached.risk_class else "Suspeito"
-        if lang == "English":
-            risk_map = {"Seguro": "Safe", "Suspeito": "Suspicious", "Malicioso": "Malicious"}
-            disp_risk = risk_map.get(disp_risk, disp_risk)
-
-        _render_badge(disp_risk, T)
-        cached_shap = cached.details.get("top_shap_features", []) if cached.details else []
-        adj_score = _shap_adjusted_score(cached.score / 100.0, str(cached.risk_class), cached_shap)
-        st.markdown(_confidence_html(cached.score, disp_risk, adj_score), unsafe_allow_html=True)
-        st.caption(f"{T['analyzed_at']}: {cached.updated_at}")
-
-        if cached.details:
-            if "url_info" in cached.details:
-                _render_dados_basicos(None, cached.details["url_info"], T)
-                _render_url_details(cached.details["url_info"], T)
-            if "external_results" in cached.details:
-                ext_results = [
-                    ExternalCheckResult(
-                        source=r.get("source", ""),
-                        safe=r.get("safe"),
-                        details=r.get("details", ""),
-                    )
-                    for r in cached.details["external_results"]
-                ]
-                _render_external_checks(ext_results, T)
-            if "top_shap_features" in cached.details:
-                _render_shap(cached.details["top_shap_features"], T, lang)
-
-    if "force_recheck" in st.session_state:
+    if is_recheck:
         del st.session_state["force_recheck"]
 
-    # ── Progress bar analysis ────────────────
+    # ── Always run live analysis (fonte 2) ────────────────
     progress_bar = st.progress(0, text=T["progress_starting"])
 
     try:
@@ -936,14 +1032,12 @@ def main() -> None:
         st.stop()
 
     def _progress_cb(label: str, pct: float):
-        # Mini translation for progress labels if possible
         lab = label
         if lang == "English":
             if "Cloudflare" in label: lab = "Checking Cloudflare Radar..."
             if "ESET" in label: lab = "Checking ESET Link Checker..."
             if "VirusTotal" in label: lab = "Querying VirusTotal..."
             if "Google" in label: lab = "Querying Google Safe Browsing..."
-        
         total = int(25 + pct * 70)
         progress_bar.progress(min(total, 95), text=lab)
 
@@ -951,16 +1045,17 @@ def main() -> None:
     ext_data = run_all_external_checks(url, progress_callback=_progress_cb)
     meta: PageMetadata = ext_data["metadata"]
     ext_results: List[ExternalCheckResult] = ext_data["external_results"]
-    
+
     progress_bar.progress(100, text=T["progress_done"])
     time.sleep(0.4)
     progress_bar.empty()
 
-    # Translate result risk class
+    # ── Translate analysis risk class ──
     risk_map_inv = {"Seguro": T["risk_safe"], "Suspeito": T["risk_suspicious"], "Malicioso": T["risk_malicious"]}
-    disp_risk = risk_map_inv.get(result.risk_class, result.risk_class)
+    analysis_disp_risk = risk_map_inv.get(result.risk_class, result.risk_class)
+    analysis_adj = _shap_adjusted_score(result.prob_phishing, result.risk_class, result.top_shap_features)
 
-    # ── Save ────────────────────────────────
+    # ── Save to DB ────────────────────────────
     details_to_save = {
         "url_info": url_info,
         "top_shap_features": result.top_shap_features,
@@ -968,19 +1063,56 @@ def main() -> None:
     }
     save_result(url, result.risk_class, result.score_0_100, result.score_0_100, details_to_save)
 
-    # ── Results ──────────────────────────────
-    _render_badge(disp_risk, T)
-    adj_score = _shap_adjusted_score(result.prob_phishing, result.risk_class, result.top_shap_features)
-    st.markdown(_confidence_html(result.score_0_100, disp_risk, adj_score), unsafe_allow_html=True)
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    #  DUAL-SOURCE RESULTS
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    col_db, col_analysis = st.columns(2)
 
-    if result.country_cc:
-        st.caption(f"{T['detected_origin']}: **{result.country_cc}**")
+    # ── Source 1: Database ──
+    with col_db:
+        if cached and not is_recheck:
+            internal_risk: str = str(cached.risk_class) if cached.risk_class else "Suspeito"
+            db_disp_risk = internal_risk
+            if lang == "English":
+                risk_map = {"Seguro": "Safe", "Suspeito": "Suspicious", "Malicioso": "Malicious"}
+                db_disp_risk = risk_map.get(internal_risk, internal_risk)
+            cached_shap = cached.details.get("top_shap_features", []) if cached.details else []
+            db_adj = _shap_adjusted_score(cached.score / 100.0, internal_risk, cached_shap)
+            _render_source_card(
+                title=T["db_source_title"],
+                risk_class=db_disp_risk,
+                score=cached.score,
+                adj_score=db_adj,
+                subtitle=f"{T['analyzed_at']}: {cached.updated_at}",
+                T=T,
+            )
+        else:
+            _render_source_card_empty(T["db_source_title"], T["db_not_found"])
+            db_disp_risk = None
 
+    # ── Source 2: Live Analysis ──
+    with col_analysis:
+        _render_source_card(
+            title=T["analysis_source_title"],
+            risk_class=analysis_disp_risk,
+            score=result.score_0_100,
+            adj_score=analysis_adj,
+            subtitle=f"{T['detected_origin']}: {result.country_cc or '—'}",
+            T=T,
+        )
+
+    # ── Final Verdict ──
+    _render_verdict(db_disp_risk, analysis_disp_risk, T)
+
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    #  DETAILS (expandable)
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     st.markdown("")
-    _render_dados_basicos(meta, url_info, T)
-    _render_url_details(url_info, T)
-    _render_external_checks(ext_results, T)
-    _render_shap(result.top_shap_features, T, lang)
+    with st.expander(T["details_title"], expanded=True):
+        _render_dados_basicos(meta, url_info, T)
+        _render_url_details(url_info, T)
+        _render_external_checks(ext_results, T)
+        _render_shap(result.top_shap_features, T, lang)
 
     st.markdown("")
     with st.expander(T["about_title"]):
@@ -994,3 +1126,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
